@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Check Point MCP on Microsoft Foundry — A Best-Practices Guide</title>
+<style>
+  :root{
+    --berry:#ee0c5d;
+    --berry-click:#e40c5b;
+    --dark-berry:#b70d4e;
+    --grey:#41273c;
+    --clay:#f2f2f2;
+    --orange:#ff3312;
+    --purple:#741984;
+    --yellow:#fcb117;
+    --ink:#231f20;
+    --line:#d9d2d6;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#fff;line-height:1.55;font-size:16px;}
+  a{color:var(--berry-click);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  /* ---- layout ---- */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+  .grid{display:grid;grid-template-columns:250px 1fr;gap:44px;align-items:start;}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;}.toc{position:static !important;}}
+
+  /* ---- top bar ---- */
+  .topbar{border-bottom:3px solid var(--berry);background:#fff;position:sticky;top:0;z-index:50;}
+  .topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .topbar svg{height:26px;width:auto;display:block;}
+  .topbar .doclabel{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--grey);font-weight:bold;}
+
+  /* ---- hero ---- */
+  .hero{background:var(--grey);color:#fff;padding:56px 0 48px;}
+  .hero .kicker{color:var(--yellow);font-size:13px;letter-spacing:.18em;text-transform:uppercase;font-weight:bold;margin-bottom:14px;}
+  .hero h1{font-size:40px;line-height:1.12;font-weight:bold;letter-spacing:-.01em;max-width:900px;}
+  .hero .sub{font-size:18px;color:#e7dfe4;margin-top:18px;max-width:820px;}
+  .hero .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;}
+  .hero .pill{border:1px solid rgba(255,255,255,.35);color:#fff;font-size:12px;padding:6px 12px;letter-spacing:.03em;}
+  .hero .pill b{color:var(--yellow);}
+
+  /* ---- TOC ---- */
+  .toc{position:sticky;top:88px;border-left:3px solid var(--berry);padding:4px 0 4px 16px;font-size:13.5px;}
+  .toc h4{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey);margin-bottom:12px;}
+  .toc ol{list-style:none;counter-reset:toc;}
+  .toc li{counter-increment:toc;margin:9px 0;}
+  .toc li a{color:var(--grey);display:block;}
+  .toc li a::before{content:counter(toc) ".";color:var(--berry);font-weight:bold;margin-right:7px;}
+  .toc li a:hover{color:var(--berry-click);text-decoration:none;}
+
+  /* ---- content ---- */
+  main{padding:44px 0 10px;}
+  section{padding:22px 0 30px;border-top:1px solid var(--line);}
+  section:first-child{border-top:none;}
+  .snum{display:inline-block;background:var(--berry);color:#fff;font-weight:bold;font-size:13px;padding:3px 10px;letter-spacing:.05em;margin-bottom:12px;}
+  h2{font-size:27px;color:var(--grey);font-weight:bold;letter-spacing:-.01em;margin-bottom:8px;}
+  h3{font-size:18px;color:var(--dark-berry);font-weight:bold;margin:22px 0 8px;}
+  h4.mini{font-size:14px;color:var(--grey);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 6px;}
+  p{margin:9px 0;}
+  ul,ol.body{margin:8px 0 8px 22px;}
+  li{margin:5px 0;}
+  strong{color:var(--grey);}
+  code{font-family:Consolas,"Courier New",monospace;background:var(--clay);border:1px solid var(--line);padding:1px 5px;font-size:13.5px;color:var(--dark-berry);}
+  .lead{font-size:17.5px;color:var(--grey);}
+
+  /* ---- callouts (square, no shadow) ---- */
+  .box{border:1px solid var(--line);border-left-width:5px;background:var(--clay);padding:14px 18px;margin:16px 0;}
+  .box .tag{display:block;font-size:11px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}
+  .box.spec{border-left-color:var(--berry);} .box.spec .tag{color:var(--berry);}
+  .box.official{border-left-color:var(--purple);} .box.official .tag{color:var(--purple);}
+  .box.synth{border-left-color:var(--yellow);background:#fff8e9;} .box.synth .tag{color:#a9760a;}
+  .box.gotcha{border-left-color:var(--orange);background:#fff1ee;} .box.gotcha .tag{color:var(--orange);}
+  .box.tried{border-left-color:var(--grey);} .box.tried .tag{color:var(--grey);}
+
+  /* ---- tables ---- */
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top;}
+  th{background:var(--grey);color:#fff;font-weight:bold;letter-spacing:.02em;}
+  tbody tr:nth-child(even){background:var(--clay);}
+  td code{background:#fff;}
+
+  /* ---- code block ---- */
+  pre{background:var(--grey);color:#f4eef1;font-family:Consolas,"Courier New",monospace;font-size:13px;line-height:1.5;padding:15px 17px;overflow-x:auto;margin:14px 0;border-left:5px solid var(--berry);}
+  pre code{background:none;border:none;color:inherit;padding:0;}
+  .cmt{color:#c79ab0;}
+
+  /* ---- key/value chips row ---- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0;}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{border:1px solid var(--line);border-top:4px solid var(--berry);padding:12px 14px;}
+  .kpi .n{font-size:26px;font-weight:bold;color:var(--berry);line-height:1;}
+  .kpi .l{font-size:12.5px;color:var(--grey);margin-top:6px;}
+
+  /* ---- two roles cards ---- */
+  .roles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:16px 0;}
+  @media(max-width:760px){.roles{grid-template-columns:1fr;}}
+  .role{border:1px solid var(--line);border-top:4px solid var(--dark-berry);padding:16px 18px;}
+  .role h3{margin-top:0;}
+
+  .diagram{border:1px solid var(--line);padding:18px;margin:18px 0;background:#fff;}
+  .diagram svg{width:100%;height:auto;display:block;}
+  .cap{font-size:12.5px;color:#6b5560;margin-top:8px;font-style:normal;}
+
+  footer{background:var(--grey);color:#e7dfe4;padding:40px 0;margin-top:30px;font-size:13.5px;}
+  footer h4{color:#fff;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;}
+  footer a{color:var(--yellow);word-break:break-word;}
+  footer .cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;}
+  @media(max-width:760px){footer .cols{grid-template-columns:1fr;}}
+  footer .srclist{list-style:none;margin:0;}
+  footer .srclist li{margin:6px 0;font-size:12.5px;}
+  .disc{border:1px solid rgba(255,255,255,.25);padding:12px 15px;margin-top:18px;font-size:12.5px;color:#d8cdd4;}
+  /* ---- print / PDF (customer hand-off) ---- */
+  @media print {
+    @page { margin: 14mm; }
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}   /* keep brand colors in the PDF */
+    html,body{font-size:11.5px;}
+    .topbar{position:static;border-bottom:2px solid var(--berry);}
+    .toc{display:none;}                     /* sidebar TOC not useful on paper */
+    .grid{display:block;}
+    main{padding-top:10px;}
+    a{text-decoration:none;color:var(--ink);}
+    h2,h3,h4{break-after:avoid;}
+    .box,table,.kpi,.kpis,.diagram,.role,pre,figure{break-inside:avoid;}
+    section{break-inside:auto;}
+    .hero{padding:28px 0;}
+    footer{break-before:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="wrap">
+    <!-- Check Point logo (dark text on light) — includes the small dot -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 205 44" aria-label="Check Point"><path fill="#231f20" d="M46.7,29.9h0c0-4.3,3.2-7.8,7.7-7.8s4.4.9,5.8,2.3l-2.1,2.4c-1.1-1-2.3-1.7-3.8-1.7-2.5,0-4.3,2.1-4.3,4.6h0c0,2.6,1.7,4.7,4.3,4.7s2.7-.7,3.9-1.7l2.1,2.1c-1.5,1.6-3.2,2.7-6,2.7-4.3,0-7.5-3.4-7.5-7.7Z"/><path fill="#231f20" d="M62.9,22.4h3.2v5.9h6v-5.9h3.2v14.9h-3.2v-6h-6v6h-3.2v-14.9Z"/><path fill="#231f20" d="M79.2,22.4h11.1v2.9h-7.9v3h6.9v2.9h-6.9v3.1h8v2.9h-11.2v-14.9Z"/><path fill="#231f20" d="M92.7,29.9h0c0-4.3,3.2-7.8,7.7-7.8s4.4.9,5.8,2.3l-2.1,2.4c-1.1-1-2.3-1.7-3.8-1.7-2.5,0-4.3,2.1-4.3,4.6h0c0,2.6,1.7,4.7,4.3,4.7s2.7-.7,3.9-1.7l2.1,2.1c-1.5,1.6-3.2,2.7-6,2.7-4.3,0-7.5-3.4-7.5-7.7Z"/><path fill="#231f20" d="M108.8,22.4h3.2v6.5l6-6.5h3.9l-6,6.3,6.3,8.6h-3.9l-4.6-6.4-1.7,1.8v4.6h-3.2v-14.9h0Z"/><path fill="#231f20" d="M130.8,22.4h6c3.5,0,5.6,2.1,5.6,5.2h0c0,3.5-2.6,5.3-6,5.3h-2.5v4.5h-3.2v-14.9h0ZM136.6,29.9c1.6,0,2.6-1,2.6-2.3h0c0-1.5-1-2.3-2.6-2.3h-2.5v4.6h2.6,0Z"/><path fill="#231f20" d="M144.5,29.9h0c0-4.3,3.3-7.8,7.8-7.8s7.8,3.4,7.8,7.7h0c0,4.3-3.3,7.8-7.8,7.8s-7.8-3.4-7.8-7.7ZM156.8,29.9h0c0-2.6-1.8-4.7-4.5-4.7s-4.4,2.1-4.4,4.6h0c0,2.6,1.8,4.7,4.5,4.7s4.4-2.1,4.4-4.6Z"/><path fill="#231f20" d="M163.3,22.4h3.2v14.9h-3.2v-14.9Z"/><path fill="#231f20" d="M170.6,22.4h3l6.9,9.2v-9.2h3.2v14.9h-2.8l-7.1-9.5v9.5h-3.2v-14.9Z"/><path fill="#231f20" d="M191,25.4h-4.5v-3h12.2v3h-4.5v11.9h-3.2v-11.9h0Z"/><path fill="#231f20" d="M201.8,24.4h-.4v-1.7h-.6v-.3h1.6v.3h-.6v1.7h0Z"/><path fill="#231f20" d="M204,23.9h0l-.6-1v1.5h-.4v-2.1h.4l.6,1,.6-1h.4v2.1h-.3v-1.5l-.6,1h0Z"/><polygon points="27.9 11 27.9 11 27.9 11 27.9 11"/><polygon points="35.2 21.7 35.2 21.7 35.2 21.7 35.2 21.7"/><path fill="#231f20" d="M44.2,11.2c-2.3,2.9-6.5,3.4-9.4,1-2.9-2.3-3.3-6.6-1-9.5,2.3-2.9,6.5-3.4,9.4-1,2.9,2.3,3.3,6.6,1,9.5Z"/><path fill="#ee0c5d" d="M35.2,21.7c-1.8.9-4.1.8-6-.2l-5.2,7.1c.7.8,1,1.7,1.1,2.7,0,.9-.2,1.8-.7,2.6-1.3,2.1-4,2.7-6.1,1.3-.2-.1-.4-.3-.6-.5,0,0-.1-.1-.2-.2-.1-.1-.2-.3-.3-.4,0,0,0-.1-.1-.2-.1-.2-.2-.4-.3-.6,0,0,0-.1,0-.2,0-.2-.1-.3-.2-.5,0,0,0-.1,0-.2,0-.2,0-.4-.1-.7v-.2c0-.2,0-.4,0-.6h0c0-.4,0-.6.1-.8,0,0,0-.1,0-.2,0-.2.2-.5.3-.7l-4.2-3.2-1.3,1.8-4.8-3.7,3.6-4.9,4.8,3.7-1.3,1.8,4.3,3.3c1.3-1.1,3.2-1.4,4.8-.5l5.2-7c-2.1-2.1-2.6-5.4-1.1-8.1.3-.5.7-1,1.1-1.4-2.8-2-6.3-3.1-10-3.1C8,7.8,0,15.9,0,25.9c0,10,7.9,18.1,17.8,18.1,9.8,0,17.8-8,17.9-18,0-1.5-.2-2.9-.5-4.2Z"/></svg>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">AI Security · Model Context Protocol · Microsoft Foundry</div>
+    <h1>Check Point MCP on Microsoft Foundry — A Best-Practices Guide</h1>
+    <p class="sub">The Model Context Protocol (MCP) is how AI agents connect to real tools. This guide explains what MCP is, how a Microsoft Foundry Hosted Agent drives the Check Point <code>@chkp</code> MCP servers, and where Check Point fits in its two roles — using this open project as the worked example.</p>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ===================== TOC ===================== -->
+  <nav class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#tldr">Executive summary</a></li>
+      <li><a href="#mcp">MCP fundamentals</a></li>
+      <li><a href="#pattern">The control-point pattern</a></li>
+      <li><a href="#bp">Best-practices checklist</a></li>
+      <li><a href="#threats">The MCP threat model</a></li>
+      <li><a href="#foundry">Worked example: Microsoft Foundry</a></li>
+      <li><a href="#checkpoint">Where Check Point fits</a></li>
+      <li><a href="#story">Check Point + Foundry: official vs. reference</a></li>
+      <li><a href="#ways">The integration ways</a></li>
+      <li><a href="#talktrack">Summary &amp; honesty guardrails</a></li>
+    </ol>
+  </nav>
+
+  <!-- ===================== MAIN ===================== -->
+  <main>
+
+    <!-- 1 -->
+    <section id="tldr">
+      <span class="snum">01</span>
+      <h2>Executive Summary</h2>
+      <p class="lead">As enterprises connect AI agents to real tools using the Model Context Protocol (MCP), the layer that <strong>aggregates tools, centralizes identity, and enforces policy</strong> becomes the single most important control point for security and governance. This guide makes vendor-neutral MCP best practices the backbone and treats <strong>Microsoft Foundry — a Hosted Agent driving the Check Point <code>@chkp</code> servers</strong> — as one concrete worked example, then positions Check Point in its two distinct roles.</p>
+      <div class="kpis">
+        <div class="kpi"><div class="n">2</div><div class="l">standard MCP transports: stdio &amp; Streamable HTTP</div></div>
+        <div class="kpi"><div class="n">15</div><div class="l"><code>@chkp</code> server packages this project hosts (of 18 upstream)</div></div>
+        <div class="kpi"><div class="n">9</div><div class="l">servers <code>deploy</code> brings up by default</div></div>
+        <div class="kpi"><div class="n">2</div><div class="l">model providers behind one loop (Claude on Foundry + <code>gpt-5-mini</code>)</div></div>
+      </div>
+      <p>Two things to get right, and this guide is built around them:</p>
+      <div class="box official">
+        <span class="tag">Official — the guardrails you can run today</span>
+        This project ships <strong>two</strong> guardrail engines. The Check Point-native one is the <strong>Check Point AI Guardrail (Lakera Guard)</strong> — one inline <code>POST api.lakera.ai/v2/guard</code> that screens the prompt <em>before</em> the model, selected with <code>--guardrail-provider lakera</code>. It is Check Point's <strong>own GA AI security</strong> (post-Lakera-acquisition) and is <em>identical on AWS and Azure</em>. The platform default is <strong>Azure AI Content Safety <em>Prompt Shields</em></strong> (Azure's screening, not a Check Point product). Note: the deeper Check Point <strong>agent/MCP runtime protection</strong> (beyond prompt screening) is still <strong>Early Access</strong> — contact Check Point. Don't present Prompt Shields itself as "Check Point protection."
+      </div>
+      <div class="box synth">
+        <span class="tag">Reference architecture — label it as such</span>
+        "<strong>Check Point <code>@chkp</code> MCP servers on Microsoft Foundry</strong>" — the hosted agent, the stdio children, and the opt-in remote tier — is a pattern this project <strong>assembles from GA Azure + Check Point building blocks</strong>. It was <strong>verified end-to-end on <code>gpt-5-mini</code></strong>, but there is <strong>no announced joint Microsoft + Check Point solution</strong>. Present it as a synthesized reference design, never as a shipped joint product.
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section id="mcp">
+      <span class="snum">02</span>
+      <h2>MCP Fundamentals Worth Understanding</h2>
+      <p>MCP is an open, JSON-RPC 2.0-based protocol that standardizes how AI applications connect to external context and tools — think <strong>"USB-C for AI tools."</strong> It is vendor-neutral: the same five concepts hold on Foundry, on AWS, or on a laptop. Five to be fluent in:</p>
+      <ul>
+        <li><strong>Client–host–server architecture.</strong> The <em>host</em> (the AI application) creates and manages <em>client</em> instances, controls permissions and consent, and coordinates the LLM. Each <em>client</em> holds an isolated, stateful session with exactly one <em>server</em> (1:1). The 1:1 is directional — one remote server can serve many clients.</li>
+        <li><strong>Stateful, capability-negotiated sessions.</strong> Client and server declare supported features in an initialization handshake. (Evolving: a subset can run stateless over Streamable HTTP, and the upcoming <code>2026-07-28</code> revision introduces a stateless protocol core.)</li>
+        <li><strong>Three server primitives:</strong> <em>tools</em> (model-controlled actions, discovered via <code>tools/list</code> and invoked via <code>tools/call</code>), <em>resources</em> (application-controlled data via URIs), and <em>prompts</em> (user-controlled templates). Clients may offer sampling, roots, and elicitation.</li>
+        <li><strong>Two standard transports:</strong> <code>stdio</code> (local subprocess over stdin/stdout) and <code>Streamable HTTP</code> (remote; HTTP POST/GET with optional SSE, session via the <code>Mcp-Session-Id</code> header). Streamable HTTP replaced the deprecated 2024-11-05 HTTP+SSE transport. This project uses <strong>both</strong>: stdio for the default in-agent path, Streamable HTTP for the opt-in remote tier.</li>
+        <li><strong>Authorization is OAuth 2.1-based, OPTIONAL, and HTTP-only.</strong> stdio servers read credentials from the environment. On HTTP, the MCP server is an OAuth 2.1 resource server; the spec mandates PKCE, RFC&nbsp;9728 Protected Resource Metadata for discovery, and RFC&nbsp;8707 resource indicators so tokens are <strong>audience-bound</strong> to a specific server — on Azure, Entra Easy Auth's <code>allowedAudiences</code> is exactly this audience check.</li>
+      </ul>
+      <div class="box tried">
+        <span class="tag">Verified hands-on</span>
+        Driving a live handshake against the real Check Point <code>@chkp</code> servers negotiated protocol <code>2025-06-18</code> cleanly: <code>initialize</code> → <code>notifications/initialized</code> → <code>tools/list</code> (the same <code>scripts/mcp_probe.mjs</code> path this repo ships). The isolation model — a server cannot read the full conversation or see into other servers — is exactly what makes a single <em>control point</em> the natural place to concentrate identity and policy.
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section id="pattern">
+      <span class="snum">03</span>
+      <h2>The MCP Control-Point Pattern (The Backbone)</h2>
+      <p>An <strong>MCP control point</strong> (an aggregating agent, or a dedicated gateway) sits in front of one or more MCP servers to provide a single, secure entry point for AI clients. Its jobs:</p>
+      <ul>
+        <li><strong>Aggregate</strong> many servers behind one place (a unified tool catalog).</li>
+        <li><strong>Centralize authentication / authorization</strong> across all backends.</li>
+        <li><strong>Enforce policy &amp; tool allowlists</strong> — what may be called, by whom.</li>
+        <li><strong>Broker credentials server-side</strong> so agents never see secrets.</li>
+        <li><strong>Provide observability / audit</strong> — one place for logs and metrics.</li>
+        <li><strong>Route &amp; version</strong> — session affinity, backend lifecycle.</li>
+      </ul>
+      <h3>Why control points exist — the configuration explosion</h3>
+      <p>Docker frames it precisely: a control point turns an <em>X&nbsp;applications × Y&nbsp;servers</em> problem into just <em>Y</em>. Each client connects once, and the control point manages every backend behind a unified interface — collapsing N-clients × M-servers sprawl into one connection per client. On Foundry, the <strong>Hosted Agent itself is the control point</strong> for its own use (it spawns the <code>@chkp</code> servers as stdio children); when a <em>second</em> consumer needs the same tools, the opt-in remote tier promotes each server to a shared, authenticated endpoint.</p>
+
+      <div class="diagram">
+        <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" font-family="Arial" font-size="13">
+          <!-- clients -->
+          <rect x="20" y="40" width="140" height="34" fill="#f2f2f2" stroke="#41273c"/>
+          <text x="90" y="62" text-anchor="middle" fill="#231f20">Foundry Hosted Agent</text>
+          <rect x="20" y="130" width="140" height="34" fill="#f2f2f2" stroke="#41273c"/>
+          <text x="90" y="152" text-anchor="middle" fill="#231f20">Portal agent / Copilot</text>
+          <rect x="20" y="220" width="140" height="34" fill="#f2f2f2" stroke="#41273c"/>
+          <text x="90" y="242" text-anchor="middle" fill="#231f20">Automation / n8n</text>
+          <!-- lines to control point -->
+          <line x1="160" y1="57" x2="330" y2="130" stroke="#b70d4e" stroke-width="1.5"/>
+          <line x1="160" y1="147" x2="330" y2="147" stroke="#b70d4e" stroke-width="1.5"/>
+          <line x1="160" y1="237" x2="330" y2="165" stroke="#b70d4e" stroke-width="1.5"/>
+          <!-- control point -->
+          <rect x="330" y="90" width="180" height="120" fill="#ee0c5d" stroke="#b70d4e"/>
+          <text x="420" y="128" text-anchor="middle" fill="#fff" font-weight="bold" font-size="15">MCP control</text>
+          <text x="420" y="146" text-anchor="middle" fill="#fff" font-weight="bold" font-size="15">point</text>
+          <text x="420" y="168" text-anchor="middle" fill="#fff" font-size="11">auth · allowlist</text>
+          <text x="420" y="184" text-anchor="middle" fill="#fff" font-size="11">creds · audit · one entry</text>
+          <!-- guardrail band -->
+          <rect x="330" y="228" width="180" height="30" fill="#41273c"/>
+          <text x="420" y="248" text-anchor="middle" fill="#fcb117" font-size="11">Check Point AI Security guardrail</text>
+          <!-- servers -->
+          <line x1="510" y1="120" x2="690" y2="55" stroke="#41273c" stroke-width="1.5"/>
+          <line x1="510" y1="150" x2="690" y2="147" stroke="#41273c" stroke-width="1.5"/>
+          <line x1="510" y1="180" x2="690" y2="239" stroke="#41273c" stroke-width="1.5"/>
+          <rect x="690" y="38" width="190" height="34" fill="#fff" stroke="#41273c"/>
+          <text x="785" y="60" text-anchor="middle" fill="#231f20">Check Point @chkp MCP</text>
+          <rect x="690" y="130" width="190" height="34" fill="#fff" stroke="#41273c"/>
+          <text x="785" y="152" text-anchor="middle" fill="#231f20">SaaS / OpenAPI targets</text>
+          <rect x="690" y="222" width="190" height="34" fill="#fff" stroke="#41273c"/>
+          <text x="785" y="244" text-anchor="middle" fill="#231f20">Functions / internal APIs</text>
+        </svg>
+        <p class="cap">Figure 1 — The control point is the choke point: clients connect once; it fronts many MCP servers, brokers credentials, and is where a runtime guardrail (e.g. Check Point AI Security, or Azure Content Safety) can enforce allow/deny outside the agent's reasoning loop.</p>
+      </div>
+
+      <h3>Pattern categories &amp; ecosystem</h3>
+      <p>A commonly-cited (community, <em>not</em> spec-defined) taxonomy has five categories: transport bridging, server aggregation, security gateway, cloud-native gateway, and edge-based patterns. Present it as convention, not standard.</p>
+      <table>
+        <thead><tr><th style="width:30%">Category</th><th>Representative implementations</th></tr></thead>
+        <tbody>
+          <tr><td>Open-source</td><td>mcp-proxy, supergateway, IBM ContextForge (mcp-context-forge), MetaMCP, Docker MCP Gateway, Lasso, Envoy AI Gateway</td></tr>
+          <tr><td>Cloud-managed</td><td><strong>Microsoft Foundry project Toolbox</strong>, Azure API Management (AI gateway), AWS Bedrock AgentCore Gateway, Kong, WSO2</td></tr>
+        </tbody>
+      </table>
+      <div class="box gotcha">
+        <span class="tag">Trade-off — say this out loud</span>
+        A control point <strong>concentrates trust and risk into one control plane</strong>. That is a high-value attack surface and a potential single point of failure — it must itself be hardened, monitored, and made highly available. On Foundry that plane is the Hosted Agent (and, when enabled, the remote Container-App tier behind Entra Easy Auth).
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="bp">
+      <span class="snum">04</span>
+      <h2>MCP Best-Practices Checklist</h2>
+      <p>The vendor-neutral controls a control point (or a well-run MCP deployment) should implement. Items marked <strong>SPEC</strong> are normative MUST / MUST-NOT requirements of the MCP authorization and security specs; the rest are industry consensus. The <em>Azure mapping</em> notes show how this project satisfies each on Foundry.</p>
+
+      <h3>Identity &amp; tokens</h3>
+      <ul>
+        <li><strong>SPEC.</strong> Enforce OAuth&nbsp;2.1 + PKCE (S256); use RFC&nbsp;9728 for AS discovery and RFC&nbsp;8707 resource indicators so tokens are <strong>audience-bound</strong>. Validate audience server-side even if the authorization server ignores the resource parameter — that check is the real enforcement point. <em>Azure mapping:</em> <strong>Entra Easy Auth <code>allowedAudiences</code></strong> (<code>api://&lt;clientId&gt;</code>, <code>Return401</code> for anything without a valid token) is the audience check on the remote tier.</li>
+        <li><strong>SPEC.</strong> <strong>Never pass client tokens through to upstream APIs.</strong> Token passthrough breaks audit, bypasses rate limits, and opens a confused-deputy / exfiltration path. Obtain a separate downstream token. <em>Azure mapping:</em> inbound is Entra (Easy Auth / Foundry-authenticated Responses); the server-to-Check-Point credential is a <strong>separate</strong> secret held in Key Vault.</li>
+        <li>Issue short-lived, scoped tokens; rotate refresh tokens for public clients. Practice <strong>scope minimization</strong> — start minimal and elevate progressively; avoid wildcard/omnibus scopes. <em>Azure mapping:</em> least-privilege Entra RBAC — the agent identity gets exactly <code>Cognitive Services User</code> + <code>Key Vault Secrets User</code>; the remote identity gets exactly <code>AcrPull</code> + <code>Key Vault Secrets User</code>.</li>
+        <li>Never use MCP sessions as an authentication mechanism; use non-deterministic session IDs bound to user identity.</li>
+      </ul>
+
+      <h3>Tools &amp; trust</h3>
+      <ul>
+        <li><strong>Pin and hash tool definitions</strong> (name + description + schema); alert / re-prompt on any change to defeat "rug-pulls." Version-lock MCP server packages. <em>Azure mapping:</em> every <code>@chkp</code> server is pinned (<code>npx -y @chkp/&lt;server&gt;-mcp@&lt;pin&gt;</code>) and the agent image is digest-pinned.</li>
+        <li>Maintain a <strong>tool/server allowlist</strong>; inspect full descriptions, parameter names, and return schemas before approval (scan for hidden or AI-only instructions). Use strict JSON Schema with <code>additionalProperties:false</code>.</li>
+        <li>Require <strong>human-in-the-loop</strong> for destructive / financial / data-sharing / cross-server calls, showing full parameters — never summaries. Never auto-approve multi-server calls.</li>
+        <li>Treat every tool <em>result</em> as untrusted input; scan/sanitize before returning it to the model. Treat third-party tool annotations as untrusted.</li>
+      </ul>
+
+      <h3>Network &amp; operations</h3>
+      <ul>
+        <li>Broker credentials server-side and inject at execution time; <strong>decouple inbound (client→control point) from outbound (control point→backend) auth.</strong> <em>Azure mapping:</em> <strong>Key Vault via managed identity</strong> — the secret is fetched at container/child start, never baked into the image, git, or the container's env map.</li>
+        <li>Apply egress / SSRF defenses: block private/reserved ranges and cloud metadata (<code>169.254.169.254</code>), require HTTPS, guard against DNS-rebinding, route server-side fetches through an egress proxy.</li>
+        <li>Validate <code>Origin</code> headers; <strong>bind local servers to <code>127.0.0.1</code></strong> (not <code>0.0.0.0</code>); require auth on all HTTP connections. <em>Azure mapping:</em> the remote tier is external only behind Easy Auth with ACA-managed TLS (<code>allowInsecure: false</code>) — never a raw port.</li>
+        <li>Centralize observability: log every invocation with parameters, user, and timestamp to a SIEM (redacting secrets/PII). Isolate sensitive servers on separate networks; run backends least-privileged. <em>Azure mapping:</em> OpenTelemetry → Application Insights / Log Analytics; container stdout via the session log stream.</li>
+        <li>Vet the supply chain: install only from verified sources, review source and tool definitions, verify checksums/signatures, watch for typosquatting.</li>
+      </ul>
+    </section>
+
+    <!-- 5 -->
+    <section id="threats">
+      <span class="snum">05</span>
+      <h2>The MCP Threat Model — What To Defend Against</h2>
+      <p>MCP inherits classic AppSec / OAuth risks <em>plus</em> a new agent-specific class where the LLM treats tool metadata and results as trusted instructions. Distinguish spec-codified threats from research taxonomy.</p>
+
+      <h4 class="mini">Spec-codified (MCP Security Best Practices + Authorization)</h4>
+      <table>
+        <thead><tr><th style="width:24%">Threat</th><th>Essence &amp; mitigation</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Token passthrough</strong></td><td>MUST NOT accept/forward tokens not issued for the server; MUST validate audience.</td></tr>
+          <tr><td><strong>Confused deputy</strong></td><td>A proxy using a static client_id with a third-party AS can leak auth codes via an existing consent cookie. Mitigate: per-user approved-client registry checked before forwarding; exact redirect_uri matching; single-use state; hardened consent cookies.</td></tr>
+          <tr><td><strong>SSRF</strong></td><td>Malicious internal URLs in OAuth discovery fields. Block private ranges + metadata, HTTPS-only, DNS-rebinding guards, egress proxy.</td></tr>
+          <tr><td><strong>Session hijacking</strong></td><td>Verify every inbound request; don't use sessions for auth; non-deterministic IDs bound to user identity.</td></tr>
+          <tr><td><strong>Local server compromise</strong></td><td>Show the exact untruncated install command, require approval, sandbox, flag dangerous patterns (<code>sudo</code>, <code>rm -rf</code>).</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="mini">Research / community taxonomy (do not present as spec terms)</h4>
+      <ul>
+        <li><strong>Tool poisoning</strong> — malicious instructions hidden in tool descriptions/schemas, invisible to users but read by the model. Invariant Labs' April 2025 PoC exfiltrated <code>~/.ssh/id_rsa</code> via a benign-looking "add" tool. The highest-severity MCP-specific class.</li>
+        <li><strong>Rug-pull / mutable definitions</strong> — a server silently changes a tool after approval, because most clients bind trust to the tool <em>name</em>, not its content. One-time vetting is insufficient.</li>
+        <li><strong>Tool shadowing / name collision</strong> — a malicious server's description manipulates the agent's use of a <em>different</em>, trusted server.</li>
+      </ul>
+
+      <div class="box gotcha">
+        <span class="tag">Proven in the wild</span>
+        The <strong>postmark-mcp</strong> npm package (v1.0.16, Sept 2025) silently BCC'd every outgoing email to an attacker domain after ~15 clean, reputation-building releases — the first confirmed real-world malicious MCP server (~1,500 weekly downloads). <strong>Lesson: change-detection and re-verification over time, not just install-time vetting.</strong>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="foundry">
+      <span class="snum">06</span>
+      <h2>Worked Example: Microsoft Foundry</h2>
+      <p>Microsoft Foundry's <strong>Hosted Agent</strong> is a managed, bring-your-own-container runtime: you ship an image to Azure Container Registry (ACR), Foundry runs it as a per-session sandbox behind an Entra-authenticated HTTPS endpoint speaking the <strong>Responses <code>2.0.0</code></strong> protocol, auto-injects Application Insights, and treats each published version as <strong>immutable</strong> (a <code>refresh</code> bumps the version to restart sandboxes). This project builds its agent image remotely with <code>az acr build</code> — no local Docker required — and creates the hosted agent (<code>chkpmcp-agent</code>, port 8088) via <code>azure-ai-projects</code>.</p>
+
+      <h3>The default topology — stdio children, no gateway</h3>
+      <p>By default the <code>@chkp</code> servers run as <strong>stdio child processes the agent spawns itself</strong> (<code>npx -y @chkp/&lt;server&gt;-mcp@&lt;pin&gt;</code>) — the <em>same</em> code path in the local runtime (<code>chat --runtime local</code>) and inside the hosted container. There is <strong>no gateway tier by default</strong>: zero extra infrastructure, lowest latency, and the credentials never leave the process. The trade-off is scope — <strong>only this agent can use the tools</strong>. (On AWS the identical servers sit behind one AgentCore Gateway; that aggregation tier is AWS-only here.) Tools are merged and namespaced <code>«server»___«tool»</code> (e.g. <code>quantummanagement___show_hosts</code>) in <code>mcp_stdio.py</code>.</p>
+
+      <h3>The opt-in remote MCP tier — a second consumer</h3>
+      <p><code>deploy --remote-mcp</code> stands up a remote tier <strong>alongside</strong> (not replacing) the stdio path — the Azure analogue of the AWS AgentCore Gateway. Each selected <code>@chkp</code> server <em>also</em> runs as its own <strong>scale-to-zero Azure Container App</strong> in the packages' native streamable-HTTP transport (reusing the same agent image with command <code>python -m chkpmcpaz.remote_server</code>), fronted by <strong>Entra Easy Auth</strong> (<code>Return401</code> for anything without a valid token for the gateway app-registration audience). A <strong>second consumer</strong> — Foundry portal agents, Copilot Studio, Claude Desktop, or any other MCP client — can then share the tools. Credentials still come from <strong>Key Vault via a managed identity</strong> (AcrPull + Key Vault Secrets User); <strong>no secrets in the containers</strong>. Scale-to-zero keeps idle cost ~0.</p>
+
+      <h3>The model story — one loop, two providers</h3>
+      <p>The agent is <strong>provider-agnostic behind one tool loop</strong>. The production path is <strong>Claude on Foundry</strong> — Anthropic Messages via the account's <code>/anthropic</code> route with the <code>AnthropicFoundry</code> client and Entra bearer tokens (<code>claude-sonnet-4-6</code> primary, <code>claude-haiku-4-5</code> fallback). For cheap testing, the <em>identical</em> loop runs on a first-party <strong><code>gpt-5-mini</code></strong> Azure OpenAI deployment (OpenAI Chat Completions) — the Azure analogue of falling back to Amazon Nova on Bedrock. A small provider seam (<code>get_provider</code> → <code>AnthropicProvider</code> | <code>AzureOpenAIProvider</code>) speaks each vendor's native wire format; the provider is auto-detected from the model name or forced with <code>--provider</code> / <code>CHKP_PROVIDER</code>.</p>
+
+      <h3>Auth &amp; secrets — Entra ID throughout</h3>
+      <ul>
+        <li><strong>Entra ID everywhere:</strong> <code>DefaultAzureCredential</code> locally, a per-agent Entra identity in the hosted sandbox, and Entra Easy Auth on the remote tier. No API keys, no custom auth tier — <strong>every endpoint requires authentication</strong>.</li>
+        <li><strong>Secrets in Key Vault</strong> (one secret per credentialed server, <code>&lt;prefix&gt;-&lt;server&gt;</code>); placeholder bodies at deploy, real values loaded by <code>creds apply</code> and never clobbered, never printed or logged.</li>
+        <li><strong>TLS 1.2+</strong> for data in transit; the ACR registry is Entra-only (admin user disabled); the remote tier uses ACA-managed TLS.</li>
+      </ul>
+
+      <div class="box spec">
+        <span class="tag">Observability — do not over-claim</span>
+        The hosted agent emits <strong>OpenTelemetry</strong> that flows to <strong>Application Insights / Log Analytics</strong> (<code>appi-</code> / <code>log-&lt;prefix&gt;-&lt;token&gt;</code>); the connection string is auto-injected into sandboxes. Container <strong>stdout is retrievable via the session log stream</strong>. That is the honest scope — traces, logs, and KQL over them. Do not promise a specific dashboard, metric name, or third-party export unless you have confirmed it against current Azure docs for your region.
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="checkpoint">
+      <span class="snum">07</span>
+      <h2>Where Check Point Fits — Two Complementary Roles</h2>
+      <p>A customer must not conflate these. Check Point both <em>publishes MCP servers</em> (tools an agent can call) and <em>sells the AI-security enforcement layer</em> that polices agentic/MCP traffic.</p>
+
+      <div class="roles">
+        <div class="role">
+          <h3>Role 1 — Check Point as MCP tools</h3>
+          <p>The official open-source monorepo <a href="https://github.com/CheckPointSW/mcp-servers">github.com/CheckPointSW/mcp-servers</a> ships MIT-licensed <code>@chkp/</code> packages; this project hosts <strong>15 of the 18 upstream</strong> (Quantum Management, Management Logs, Threat Prevention, HTTPS Inspection, Policy Insights, GW-CLI, Reputation, Threat Emulation, Documentation, CloudGuard WAF, Spark, Argos ERM, Harmony SASE, Workforce AI, Quantum Gaia). They let an agent query your estate in natural language.</p>
+          <ul>
+            <li><strong>Transport:</strong> default <code>stdio</code> via <code>npx -y @chkp/&lt;pkg&gt;@&lt;pin&gt;</code>, spawned as children of the agent. An optional HTTP mode exists but historically shipped with no built-in auth and no TLS (see gotcha below); this project only exposes it through the Easy-Auth-fronted remote tier.</li>
+            <li><strong>Auth (env vars, never shown to the model):</strong> Smart-1 Cloud (<code>API_KEY</code>+<code>S1C_URL</code>); on-prem (<code>MANAGEMENT_HOST</code>/<code>PORT</code> + <code>API_KEY</code> or <code>USERNAME</code>/<code>PASSWORD</code>); ThreatCloud / Infinity Portal keys for the others. Values come from Key Vault at spawn.</li>
+            <li><strong>Read-oriented — but verify per package.</strong> Quantum Management &amp; Harmony SASE self-describe as read-only; several packages say "manage." Scope the API key to least privilege regardless.</li>
+          </ul>
+          <div class="box tried" style="margin-top:8px">
+            <span class="tag">Verified hands-on</span>
+            <code>@chkp/quantum-management-mcp</code> (v1.4.7) exposed a read-only catalog (<code>show_*</code>, <code>where_used</code>, <code>simulate_packet</code>, <code>find_zero_hits_rules</code>, plus a <code>management__init</code> login tool). Tool <em>registration</em> is static, so <code>tools/list</code> works even before the management API is reachable — useful for a smoke test with placeholder credentials.
+          </div>
+        </div>
+        <div class="role">
+          <h3>Role 2 — Check Point as the enforcement layer</h3>
+          <p>Check Point's "AI Defense Plane" spans Workspace AI security, AI application security, and <strong>AI agent runtime security</strong> (governing tool calls, blocking unsafe autonomy). Verified specifics:</p>
+          <ul>
+            <li><strong>CloudGuard WAF + Lakera dual-layer ML</strong> — a supervised layer (Prompt Injection Prevention, Data Leakage Prevention, Content Control, Usage Control) plus an unsupervised refinement layer, 100+ languages, covering GenAI apps, APIs &amp; agents.</li>
+            <li><strong>Quantum Firewall R82.10 natively detects &amp; monitors MCP traffic</strong> — a shipped capability (Dec 2025 release), including auto-detection of unauthorized GenAI tools and MCP servers.</li>
+            <li><strong>Lakera:</strong> Check Point announced an agreement to acquire Lakera (Sept 2025). <em>Gandalf</em> — Lakera's adversarial red-team game — <em>feeds</em> the guardrails; the product is <strong>Lakera Guard / AI Guardrails</strong>. Do not equate Gandalf with the guardrail engine.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="box gotcha">
+        <span class="tag">The central technical gotcha</span>
+        Check Point MCP servers are <code>stdio</code>/<code>npx</code> by default, and their optional HTTP mode (<code>--transport http</code>, port 3000, <code>/mcp</code> + <code>/health</code>) historically shipped with <strong>no authentication and no TLS</strong> — the README says to run it only behind an authenticated, TLS-terminating reverse proxy. This project fixes that for the remote tier by putting <strong>Entra Easy Auth + ACA-managed TLS</strong> in front of every endpoint (<code>allowInsecure: false</code>, <code>Return401</code>). There is no hosted/managed remote Check Point endpoint from the vendor; servers run in the customer's environment. <strong>Never expose a raw <code>@chkp</code> MCP HTTP port.</strong>
+      </div>
+
+      <div class="box gotcha">
+        <span class="tag">TLS policy finding — on-prem client</span>
+        Separately, the on-prem management client historically hardcodes <code>new https.Agent({ rejectUnauthorized: false })</code> in its <code>login()</code>/<code>callApi()</code> path — it <strong>disables TLS certificate verification</strong> on the connection to <code>MANAGEMENT_HOST</code>. A self-signed SMS cert therefore won't block it, but this <strong>conflicts with the "never disable TLS verification" rule</strong> (and <code>NODE_EXTRA_CA_CERTS</code> is inert while it's forced). <strong>Smart-1 Cloud</strong> (<code>S1C_URL</code>) keeps verification <em>on</em> — prefer it, or fork/patch the client to trust the SMS CA. Worth flagging to the <code>@chkp</code> product team.
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section id="story">
+      <span class="snum">08</span>
+      <h2>Check Point + Microsoft Foundry: Official vs. Reference Architecture</h2>
+      <p>This is the section to get exactly right. There are two separate stories, and neither is a shipped joint Microsoft + Check Point product.</p>
+
+      <div class="box official">
+        <span class="tag">Official — the guardrails you can run today</span>
+        Two engines screen the prompt <em>before</em> the model (<code>chat --guardrail</code>, or baked into the hosted agent with <code>deploy --guardrail</code> / <code>CHKP_GUARDRAIL=enforce</code>). The <strong>Check Point-native</strong> one is the <strong>Check Point AI Guardrail (Lakera Guard)</strong> — <code>--guardrail-provider lakera</code>, one inline <code>POST api.lakera.ai/v2/guard</code>, GA and identical on AWS and Azure. The platform default is <strong>Azure AI Content Safety <em>Prompt Shields</em></strong> (<code>POST {endpoint}/contentsafety/text:shieldPrompt</code>) — <strong>Azure's</strong> screening, not a Check Point product. Deeper Check Point <strong>agent/MCP runtime protection</strong> (beyond prompt screening) remains <strong>Early Access</strong> — contact Check Point.
+      </div>
+
+      <div class="box synth">
+        <span class="tag">Synthesized reference architecture — no official joint blueprint</span>
+        <strong>The "<code>@chkp</code> servers on Foundry (stdio + opt-in remote tier)" architecture is assembled from GA Azure + Check Point building blocks</strong> and was <strong>verified end-to-end on <code>gpt-5-mini</code></strong>. Every step is individually grounded in Azure and Check Point docs — but it is <strong>not an announced joint solution</strong>. Label it clearly when presenting.
+      </div>
+
+      <h3>How the reference architecture works</h3>
+
+      <div class="diagram">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" font-family="Arial, Helvetica, sans-serif">
+  <!-- self-contained light panel -->
+  <rect x="0" y="0" width="1000" height="540" fill="#ffffff"/>
+  <rect x="0" y="0" width="1000" height="6" fill="#ee0c5d"/>
+
+  <text x="30" y="40" font-size="21" font-weight="bold" fill="#41273c">Check Point × Microsoft Foundry</text>
+  <text x="30" y="61" font-size="12.5" fill="#6b5560">The @chkp servers are stdio children of the hosted agent by default; an opt-in remote tier shares them with a second consumer.</text>
+
+  <!-- Content Safety band above the agent -->
+  <rect x="150" y="82" width="300" height="52" fill="#741984"/>
+  <text x="300" y="104" text-anchor="middle" font-size="12" font-weight="bold" fill="#ffffff">AI Guardrail — Lakera or Prompt Shields</text>
+  <text x="300" y="122" text-anchor="middle" font-size="10.5" fill="#f2f2f2">optional · your choice of engine · outside the model</text>
+  <line x1="300" y1="134" x2="300" y2="176" stroke="#741984" stroke-width="2.5"/><polygon points="300,182 294,170 306,170" fill="#741984"/>
+
+  <!-- consumers -->
+  <rect x="20" y="248" width="118" height="86" fill="#f2f2f2" stroke="#41273c"/>
+  <text x="79" y="278" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#231f20">Consumers</text>
+  <text x="79" y="298" text-anchor="middle" font-size="10" fill="#6b5560">CLI · your app</text>
+  <text x="79" y="313" text-anchor="middle" font-size="10" fill="#6b5560">Teams · n8n</text>
+  <text x="79" y="328" text-anchor="middle" font-size="10" fill="#6b5560">(bridge / Entra)</text>
+
+  <!-- Foundry Hosted Agent -->
+  <rect x="168" y="188" width="182" height="196" fill="#ee0c5d" stroke="#b70d4e"/>
+  <text x="259" y="240" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">Foundry</text>
+  <text x="259" y="259" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">Hosted Agent</text>
+  <text x="259" y="285" text-anchor="middle" font-size="10.5" fill="#ffffff">Responses 2.0.0</text>
+  <text x="259" y="303" text-anchor="middle" font-size="10.5" fill="#ffffff">Claude on Foundry</text>
+  <text x="259" y="319" text-anchor="middle" font-size="10.5" fill="#ffffff">or gpt-5-mini</text>
+  <text x="259" y="337" text-anchor="middle" font-size="10.5" fill="#ffffff">one provider-agnostic loop</text>
+  <text x="259" y="355" text-anchor="middle" font-size="10.5" fill="#ffffff">Entra ID</text>
+  <line x1="138" y1="286" x2="166" y2="286" stroke="#b70d4e" stroke-width="2"/><polygon points="168,286 158,281 158,291" fill="#b70d4e"/>
+  <text x="152" y="279" text-anchor="middle" font-size="9" fill="#6b5560">Entra</text>
+
+  <!-- stdio children (solid) -->
+  <g font-size="11.5" fill="#231f20">
+    <rect x="398" y="192" width="270" height="44" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="398" y="192" width="6" height="44" fill="#ee0c5d"/>
+    <text x="414" y="211" font-weight="bold">stdio child (default)</text><text x="414" y="228" font-size="10.5" fill="#6b5560">@chkp/quantum-management</text>
+    <rect x="398" y="244" width="270" height="44" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="398" y="244" width="6" height="44" fill="#ee0c5d"/>
+    <text x="414" y="263" font-weight="bold">stdio child (default)</text><text x="414" y="280" font-size="10.5" fill="#6b5560">threat-prevention · management-logs · …</text>
+  </g>
+  <text x="398" y="304" font-size="10" font-style="italic" fill="#6b5560">9 servers by default · 15 total · spawned by the agent</text>
+
+  <!-- remote tier (dashed / opt-in) -->
+  <g font-size="11.5" fill="#231f20">
+    <rect x="398" y="316" width="270" height="60" fill="#fbf8fa" stroke="#b0a6ac" stroke-dasharray="5 4"/>
+    <text x="414" y="337" font-weight="bold" fill="#41273c">opt-in remote tier</text>
+    <text x="414" y="354" font-size="10.5" fill="#6b5560">Container App per server · streamable-HTTP</text>
+    <text x="414" y="369" font-size="10.5" fill="#6b5560">Entra Easy Auth · scale-to-zero · deploy --remote-mcp</text>
+  </g>
+
+  <!-- second consumer into the remote tier -->
+  <rect x="398" y="398" width="270" height="48" fill="#f2f2f2" stroke="#41273c"/>
+  <text x="533" y="419" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#231f20">Second consumer</text>
+  <text x="533" y="435" text-anchor="middle" font-size="10" fill="#6b5560">portal agent · Copilot Studio · Claude Desktop · other MCP client</text>
+  <line x1="533" y1="398" x2="533" y2="378" stroke="#b0a6ac" stroke-width="1.8" stroke-dasharray="5 4"/><polygon points="533,376 527,388 539,388" fill="#b0a6ac"/>
+  <text x="576" y="392" text-anchor="middle" font-size="9" fill="#6b5560">Entra token</text>
+
+  <!-- agent -> stdio children -->
+  <g stroke="#b70d4e" stroke-width="2" fill="#b70d4e">
+    <line x1="350" y1="230" x2="392" y2="214"/><polygon points="398,212 387,212 392,222"/>
+    <line x1="350" y1="270" x2="392" y2="266"/><polygon points="398,266 388,261 388,271"/>
+  </g>
+  <text x="374" y="248" text-anchor="middle" font-size="9" fill="#6b5560">spawn</text>
+  <!-- agent -> remote tier (dashed) -->
+  <line x1="350" y1="346" x2="392" y2="346" stroke="#b0a6ac" stroke-width="1.8" stroke-dasharray="5 4"/><polygon points="398,346 388,341 388,351" fill="#b0a6ac"/>
+
+  <!-- Check Point estate -->
+  <rect x="720" y="192" width="255" height="184" fill="#41273c"/>
+  <text x="847" y="218" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">Check Point estate</text>
+  <g font-size="11" fill="#f2f2f2">
+    <text x="736" y="246">• Quantum mgmt — SMS / Smart-1 Cloud</text>
+    <text x="736" y="270">• Harmony SASE</text>
+    <text x="736" y="294">• CloudGuard WAF</text>
+    <text x="736" y="318">• Reputation · Threat Emulation</text>
+    <text x="736" y="342">• … each server's own backend</text>
+    <text x="736" y="366" font-style="italic" fill="#cbb9c6">Mgmt API / HTTPS (TLS)</text>
+  </g>
+  <g stroke="#41273c" stroke-width="1.8" fill="#41273c">
+    <line x1="668" y1="214" x2="714" y2="214"/><polygon points="720,214 709,209 709,219"/>
+    <line x1="668" y1="346" x2="714" y2="346"/><polygon points="720,346 709,341 709,351"/>
+  </g>
+
+  <!-- side infra: Key Vault + Content Safety noted -->
+  <rect x="20" y="404" width="118" height="118" fill="#fcfcff" stroke="#e0d8dd"/>
+  <text x="79" y="428" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#41273c">Azure Key Vault</text>
+  <text x="79" y="446" text-anchor="middle" font-size="9.5" fill="#6b5560">one secret</text>
+  <text x="79" y="459" text-anchor="middle" font-size="9.5" fill="#6b5560">per server</text>
+  <text x="79" y="478" text-anchor="middle" font-size="9.5" fill="#6b5560">managed identity</text>
+  <text x="79" y="491" text-anchor="middle" font-size="9.5" fill="#6b5560">→ child / app env</text>
+  <text x="79" y="510" text-anchor="middle" font-size="9.5" fill="#6b5560">no secrets in image</text>
+  <!-- KV -> children -->
+  <path d="M138 440 H 380 V 260" fill="none" stroke="#b0a6ac" stroke-width="1.6" stroke-dasharray="4 3"/>
+  <polygon points="380,254 374,266 386,266" fill="#b0a6ac"/>
+  <text x="250" y="434" text-anchor="middle" font-size="9" fill="#6b5560">secret → env at spawn</text>
+
+  <!-- status footnote -->
+  <rect x="20" y="472" width="360" height="0" fill="none"/>
+  <rect x="398" y="460" width="577" height="60" fill="#f7f4f6" stroke="#d9d2d6"/>
+  <text x="412" y="481" font-size="11" fill="#41273c"><tspan font-weight="bold">Status (2026-07-19):</tspan> stdio default = GA building blocks, field-tested end to end on <tspan font-family="Consolas,monospace">gpt-5-mini</tspan>.</text>
+  <text x="412" y="499" font-size="11" fill="#41273c">Remote tier = <tspan font-weight="bold" fill="#b70d4e">built</tspan> + unit-tested; live <tspan font-family="Consolas,monospace">deploy --remote-mcp</tspan> is the operator's step.</text>
+  <text x="412" y="515" font-size="11" fill="#41273c">Guardrail = <tspan font-weight="bold" fill="#b70d4e">Check Point (Lakera)</tspan> or Azure Content Safety. CP runtime protection = <tspan font-weight="bold" fill="#a9760a">Early Access</tspan>.</text>
+</svg>
+        <p class="cap">Figure 2 — The Foundry reference architecture. Consumers reach a single Hosted Agent (Claude or <code>gpt-5-mini</code>) that spawns the <code>@chkp</code> servers as stdio children by default; the dashed opt-in remote tier promotes each server to an Entra-Easy-Auth Container App for a second consumer. Key Vault holds per-server credentials (managed identity, no secrets in the image); the optional inline guardrail is the Check Point AI Guardrail (Lakera) or Azure Content Safety Prompt Shields.</p>
+      </div>
+      <ol class="body">
+        <li><strong>Provision the infra.</strong> <code>deploy</code> runs <code>azd provision</code> over Bicep: the Foundry account + project, the model deployments (Claude, or first-party <code>gpt-5-mini</code>), Key Vault, ACR, and Log Analytics / Application Insights, with least-privilege RBAC declared before the model LRO completes so it propagates during the wait.</li>
+        <li><strong>Build the agent image.</strong> <code>az acr build --file agent/Dockerfile .</code> builds remotely in ACR (Python 3.12 + Node 20, linux/amd64, port 8088) — no local Docker. The registry is Entra-only (admin user disabled) and the image is digest-pinned.</li>
+        <li><strong>Create the Hosted Agent.</strong> The CLI creates <code>chkpmcp-agent</code> via <code>azure-ai-projects</code> (Responses protocol <code>2.0.0</code>), then grants its per-agent Entra identity <code>Cognitive Services User</code> (Claude route + Content Safety) and <code>Key Vault Secrets User</code> — the identity only exists after the version is created.</li>
+        <li><strong>Seed and load credentials.</strong> Placeholder secrets at deploy; real values via <code>creds apply</code> (or <code>deploy --creds</code>) straight into Key Vault — never printed, never in git. The hosted sandboxes re-read them after a <code>refresh</code>.</li>
+        <li><strong>Optional — stand up the remote tier.</strong> <code>deploy --remote-mcp</code> registers the Entra app (the Easy Auth audience <code>api://&lt;clientId&gt;</code>), a shared user-assigned identity (AcrPull + Key Vault Secrets User), a Container Apps environment, and one scale-to-zero Container App per selected server behind Easy Auth. The endpoint catalog is persisted for a second consumer.</li>
+        <li><strong>Ask the agent.</strong> <code>chat</code> runs the reason → <code>@chkp</code> tools → loop, grounded in real tool output, with prompt caching, streaming, and per-run token telemetry — locally or on the hosted runtime with platform-managed conversation history (<code>--session</code>).</li>
+      </ol>
+
+      <div class="box tried">
+        <span class="tag">Field-tested build available</span>
+        The <strong>local</strong> and <strong>hosted</strong> chat paths were proven <strong>end to end on <code>gpt-5-mini</code></strong> — the full chain (hosted agent → provider → <code>@chkp</code> MCP tools → grounded answer). The <strong>remote MCP tier is built and unit-tested (372 tests pass) and its Bicep compiles</strong>; a live <code>deploy --remote-mcp</code> against a real subscription is the operator's step. The pure-logic test suite runs on Python 3.11/3.12/3.13. Step-by-step commands are in the repo README and the scenario runbooks (<code>docs/scenarios/</code>).
+      </div>
+
+      <div class="box spec">
+        <span class="tag">The ideal combined topology</span>
+        The <code>@chkp</code> tools on Foundry <em>and</em> Check Point's own runtime AI protection policing that same agentic usage is the natural end state — but Check Point runtime protection is <strong>Early Access</strong>, not a documented, supported Foundry integration. Present it as a roadmap/open question, not a promise; enforce today with Azure Content Safety and Check Point's inline Guard API.
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section id="ways">
+      <span class="snum">09</span>
+      <h2>The Integration Ways — Choosing Your Mode</h2>
+      <p class="lead">Check Point meets Microsoft Foundry across three families — <strong>Tools</strong> (the agent uses Check Point), <strong>Enforcement</strong> (Check Point or Azure polices the agent), and <strong>Network/Edge</strong> (Check Point secures the traffic). Statuses below are honest <strong>as of 19 July 2026</strong>: several Tools ways are GA building blocks field-tested on <code>gpt-5-mini</code>; the marquee Check Point runtime guardrail is <strong>Early Access</strong>.</p>
+
+      <div class="diagram">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" font-family="Arial, Helvetica, sans-serif">
+  <rect x="0" y="0" width="1000" height="470" fill="#ffffff"/>
+  <rect x="0" y="0" width="1000" height="6" fill="#ee0c5d"/>
+
+  <text x="30" y="40" font-size="21" font-weight="bold" fill="#41273c">The Integration Landscape</text>
+  <text x="30" y="62" font-size="13" fill="#6b5560">Every way Check Point meets Microsoft Foundry — grouped by family, colour-coded by honest status (2026-07-19).</text>
+
+  <!-- legend -->
+  <g font-size="11" fill="#41273c">
+    <rect x="30"  y="80" width="13" height="13" fill="#b70d4e"/><text x="49"  y="91">field-tested (gpt-5-mini)</text>
+    <rect x="215" y="80" width="13" height="13" fill="#ee0c5d"/><text x="234" y="91">GA (shipping)</text>
+    <rect x="345" y="80" width="13" height="13" fill="#fcb117"/><text x="364" y="91">Early Access / built</text>
+    <rect x="510" y="80" width="13" height="13" fill="#b0a6ac"/><text x="529" y="91">inferred — GA parts, no vendor reference architecture</text>
+  </g>
+
+  <!-- family headers -->
+  <rect x="30"  y="118" width="300" height="36" fill="#ee0c5d"/><text x="180" y="141" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">TOOLS · agent USES Check Point</text>
+  <rect x="350" y="118" width="300" height="36" fill="#41273c"/><text x="500" y="141" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">ENFORCEMENT · POLICE the agent</text>
+  <rect x="670" y="118" width="300" height="36" fill="#b70d4e"/><text x="820" y="141" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff">NETWORK · secure the wire</text>
+
+  <g font-size="11.5" fill="#231f20">
+    <!-- TOOLS col -->
+    <rect x="36" y="168" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="36" y="168" width="6" height="34" fill="#b70d4e"/><text x="52" y="189" font-weight="bold">stdio children (default topology)</text>
+    <rect x="36" y="210" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="36" y="210" width="6" height="34" fill="#b70d4e"/><text x="52" y="231" font-weight="bold">Hosted Agent (Responses)</text>
+    <rect x="36" y="252" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="36" y="252" width="6" height="34" fill="#ee0c5d"/><text x="52" y="273">Bridge — Azure Function bearer token</text>
+    <rect x="36" y="294" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="36" y="294" width="6" height="34" fill="#fcb117"/><text x="52" y="315">Remote MCP tier (deploy --remote-mcp)</text>
+    <rect x="36" y="336" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="36" y="336" width="6" height="34" fill="#ee0c5d"/><text x="52" y="357">Direct local @chkp probe (no Azure)</text>
+
+    <!-- ENFORCEMENT col -->
+    <rect x="356" y="168" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="356" y="168" width="6" height="34" fill="#ee0c5d"/><text x="372" y="189" font-weight="bold">Content Safety Prompt Shields (Azure's)</text>
+    <rect x="356" y="210" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="356" y="210" width="6" height="34" fill="#ee0c5d"/><text x="372" y="231" font-weight="bold">Check Point Guard API (inline, per step)</text>
+    <rect x="356" y="252" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="356" y="252" width="6" height="34" fill="#fcb117"/><text x="372" y="273">Check Point runtime-in-Foundry</text>
+    <rect x="356" y="294" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="356" y="294" width="6" height="34" fill="#ee0c5d"/><text x="372" y="315">Check Point WAF + Lakera (edge)</text>
+    <rect x="356" y="336" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="356" y="336" width="6" height="34" fill="#ee0c5d"/><text x="372" y="357">AI Defense Plane (Azure Marketplace)</text>
+
+    <!-- NETWORK col -->
+    <rect x="676" y="168" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="676" y="168" width="6" height="34" fill="#ee0c5d"/><text x="692" y="189" font-weight="bold">Quantum FW R82.10 — MCP monitoring</text>
+    <rect x="676" y="210" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="676" y="210" width="6" height="34" fill="#b0a6ac"/><text x="692" y="231">CloudGuard egress / SSRF control</text>
+    <rect x="676" y="252" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="676" y="252" width="6" height="34" fill="#b0a6ac"/><text x="692" y="273">East-West inspection (agent → tool)</text>
+    <rect x="676" y="294" width="288" height="34" fill="#f7f4f6" stroke="#e0d8dd"/><rect x="676" y="294" width="6" height="34" fill="#b0a6ac"/><text x="692" y="315">Private connectivity (VNet / Private Link)</text>
+  </g>
+
+  <text x="30" y="400" font-size="11" fill="#6b5560">Tools: stdio + hosted are field-tested on gpt-5-mini; the remote tier is built. Enforcement: Prompt Shields (Azure) and Guard API (Check Point) ship today;</text>
+  <text x="30" y="418" font-size="11" fill="#6b5560">Check Point runtime-in-Foundry is Early Access. Network: only Quantum FW R82.10 names MCP; the rest are reference-architecture patterns.</text>
+</svg>
+        <p class="cap">Figure 3 — The integration landscape: three families — Tools (the agent <em>uses</em> Check Point), Enforcement (Check Point / Azure <em>polices</em> the agent), and Network (Check Point secures the <em>traffic</em>) — colour-coded by honest shipping status.</p>
+      </div>
+      <table>
+        <thead><tr><th style="width:12%">Family</th><th>Headline way</th><th style="width:26%">Provider</th><th style="width:22%">Status</th></tr></thead>
+        <tbody>
+          <tr><td>Tools</td><td><strong>stdio children</strong> — <code>@chkp</code> servers spawned by the agent (default)</td><td><code>@chkp</code> MCP servers</td><td>GA parts · <strong>field-tested on <code>gpt-5-mini</code></strong></td></tr>
+          <tr><td>Tools</td><td><strong>Hosted Agent</strong> — the same loop on Foundry (Responses)</td><td>Foundry Hosted Agent</td><td><strong>live-validated</strong></td></tr>
+          <tr><td>Tools</td><td>Bridge — Azure Function bearer token for Teams / n8n / curl</td><td>Azure Function</td><td><strong>runnable</strong></td></tr>
+          <tr><td>Tools</td><td>Remote MCP tier — shared Entra-Easy-Auth Container Apps (<code>deploy --remote-mcp</code>)</td><td>Azure Container Apps</td><td><strong>built</strong> (operator to deploy live)</td></tr>
+          <tr><td>Tools</td><td>Direct local <code>@chkp</code> probe (no Azure)</td><td><code>@chkp</code> MCP servers</td><td><strong>GA</strong> (Check Point MCP behavior)</td></tr>
+          <tr><td>Enforcement</td><td>Content Safety <strong>Prompt Shields</strong> — screen before the model</td><td>Azure (not Check Point)</td><td><strong>GA</strong></td></tr>
+          <tr><td>Enforcement</td><td>Check Point <strong>Guard API</strong> — inline enforcement per agent step</td><td>Check Point AI Agent Security</td><td><strong>GA</strong></td></tr>
+          <tr><td>Enforcement</td><td>Check Point <strong>runtime-in-Foundry</strong> guardrail</td><td>Check Point</td><td><strong>Early Access</strong> (contact Check Point)</td></tr>
+          <tr><td>Network</td><td>Quantum Firewall R82.10 — network-level MCP monitoring</td><td>Quantum Firewall R82.10</td><td><strong>GA</strong></td></tr>
+          <tr><td>Network</td><td>CloudGuard egress / SSRF control + private connectivity</td><td>CloudGuard Network Security</td><td>inferred (parts GA)</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Which do I want?</strong> To let the agent <em>use</em> Check Point → <strong>Tools</strong> (start with stdio children — the default — or the direct local probe for a no-Azure POC; add the remote tier only when a <em>second</em> consumer needs the same tools). To <em>police</em> the agent → <strong>Enforcement</strong> (enforce today with Azure's Prompt Shields and/or Check Point's inline Guard API; Check Point <em>runtime-in-Foundry</em> is Early Access — plan, don't promise). To secure the <em>wire</em> → <strong>Network</strong> (Quantum Firewall R82.10 is the only shipping product that names MCP; add CloudGuard egress/SSRF control).</p>
+
+      <div class="box synth">
+        <span class="tag">Read carefully — what is and isn't shipped</span>
+        The <strong>remote MCP tier is opt-in and built in <em>this project</em></strong> — it is <strong>not</strong> a Microsoft-shipped Check Point connector. <strong>Prompt Shields is Azure's</strong> screening, not Check Point's. <strong>Check Point runtime-in-Foundry is Early Access.</strong> What is GA and buildable today is the Azure substrate (Foundry Hosted Agents, Container Apps + Easy Auth, Content Safety) plus Check Point's own inline engine (Guard API). Wire Check Point's runtime guardrail in when the official Early-Access mechanism is available to you.
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="talktrack">
+      <span class="snum">10</span>
+      <h2>Summary &amp; Honesty Guardrails</h2>
+      <ol class="body">
+        <li><strong>The problem.</strong> Connecting AI agents to real tools via MCP creates (a) configuration sprawl, (b) a new attack class where tool descriptions and results become injection vectors, and (c) credential/audit gaps because MCP auth is optional and HTTP-only. Real incidents already exist (postmark-mcp, Sept 2025).</li>
+        <li><strong>The pattern.</strong> A control point solves all three: one entry per client, centralized identity with audience-bound tokens (Entra Easy Auth on the remote tier), tool allowlisting/pinning, human-in-the-loop, credential brokering (Key Vault via managed identity), and unified audit.</li>
+        <li><strong>Microsoft Foundry</strong> is a mature managed example: a Hosted Agent (BYO container, Responses <code>2.0.0</code>, immutable versions, App Insights) that drives the <code>@chkp</code> servers as stdio children — with an opt-in remote tier when a second consumer needs the tools.</li>
+        <li><strong>Check Point's two roles:</strong> <em>tools</em> (the <code>@chkp</code> MCP servers query your estate in natural language; credentials stay in Key Vault and are never shown to the model) and <em>enforcement</em> (CloudGuard WAF + Lakera dual-layer ML and Quantum Firewall R82.10's native MCP monitoring provide runtime guardrails the platform alone doesn't give you).</li>
+        <li><strong>The Claude subscription caveat — say it up front.</strong> <strong>Claude on Foundry requires a pay-as-you-go / EA subscription.</strong> MSDN / Visual Studio / Dev-Test / free-trial / CSP subscriptions are <strong>blocked</strong> — the tool's <code>doctor</code> preflight fails them before any deploy. When Claude is unavailable, demo the cheap first-party <strong><code>gpt-5-mini</code></strong> path (the Azure analogue of Amazon Nova): it deploys on Dev-Test subscriptions, needs no <code>--org</code> and no Marketplace terms, and exercises the identical tool loop.</li>
+        <li><strong>The guardrail caveat.</strong> The Azure-native guardrail this project can run today is <strong>Azure's Content Safety Prompt Shields — not Check Point's runtime protection</strong>, which is <strong>Early Access</strong> (contact Check Point). Never present Prompt Shields as a Check Point product.</li>
+        <li><strong>The remote-tier caveat.</strong> The remote MCP tier is <strong>opt-in and built in this project</strong> — it is <strong>not</strong> a Microsoft-shipped Check Point connector. And the "<code>@chkp</code> servers on Foundry" architecture is a synthesized reference design verified on <code>gpt-5-mini</code>, not an announced joint Microsoft + Check Point solution.</li>
+        <li><strong>Recommend defense in depth:</strong> least-privilege Entra RBAC, secrets in Key Vault (never in code/git/env), Entra Easy Auth on every endpoint, digest-pinned images — <em>plus</em> Check Point runtime guardrails in front of agentic usage.</li>
+      </ol>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h4>Version-Sensitivity Notice</h4>
+        <p>This is a fast-moving area. As of <strong>19 July 2026</strong>: MCP spec baseline is <code>2025-11-25</code> (a <code>2026-07-28</code> release candidate exists but is not yet published); <strong>Claude on Foundry is GA (June 2026)</strong>; <strong>Foundry Hosted Agents</strong> shipped at Build 2026; the <code>@chkp</code> packages are <strong>pinned in the repo</strong> (e.g. <code>@chkp/quantum-management-mcp@1.4.7</code>) — verify each pin before quoting. <strong>Pin and re-verify every version, package, and date before quoting to a customer.</strong> Node.js 20+ required for the Check Point servers; disable telemetry with <code>TELEMETRY_DISABLED=true</code>.</p>
+        <div class="disc">Prepared for customers who want to experiment with Check Point's open-source MCP servers. The "<code>@chkp</code> MCP servers on Microsoft Foundry" design is a synthesized reference architecture, not an announced joint Microsoft + Check Point solution. Verify all claims against current primary documentation.</div>
+      </div>
+      <div>
+        <h4>Primary Sources</h4>
+        <ul class="srclist">
+          <li>MCP specification — <a href="https://modelcontextprotocol.io/specification/2025-11-25">modelcontextprotocol.io/specification/2025-11-25</a></li>
+          <li>Check Point MCP servers — <a href="https://github.com/CheckPointSW/mcp-servers">github.com/CheckPointSW/mcp-servers</a></li>
+          <li>Microsoft Foundry Hosted Agents — <a href="https://learn.microsoft.com/azure/ai-foundry/agents/hosted-agents">learn.microsoft.com/azure/ai-foundry — hosted agents</a></li>
+          <li>Claude in Microsoft Foundry — <a href="https://learn.microsoft.com/azure/ai-foundry/concepts/models-featured#anthropic">learn.microsoft.com/azure/ai-foundry — Anthropic / Azure Marketplace</a></li>
+          <li>Azure Container Apps authentication (Easy Auth) — <a href="https://learn.microsoft.com/azure/container-apps/authentication">learn.microsoft.com/azure/container-apps/authentication</a></li>
+          <li>Azure AI Content Safety Prompt Shields — <a href="https://learn.microsoft.com/azure/ai-services/content-safety/concepts/jailbreak-detection">learn.microsoft.com/azure/ai-services/content-safety</a></li>
+          <li>OWASP MCP Security Cheat Sheet — <a href="https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html">cheatsheetseries.owasp.org</a></li>
+          <li>postmark-mcp incident — <a href="https://snyk.io/blog/malicious-mcp-server-on-npm-postmark-mcp-harvests-emails/">snyk.io</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

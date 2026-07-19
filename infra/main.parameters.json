@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION=eastus2}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "principalType": {
+      "value": "${AZURE_PRINCIPAL_TYPE=User}"
+    },
+    "claudeOrganizationName": {
+      "value": "${CLAUDE_ORGANIZATION_NAME}"
+    },
+    "claudeCountryCode": {
+      "value": "${CLAUDE_COUNTRY_CODE=US}"
+    },
+    "claudeIndustry": {
+      "value": "${CLAUDE_INDUSTRY=technology}"
+    },
+    "claudeCapacity": {
+      "value": "${CLAUDE_CAPACITY=25}"
+    },
+    "deployFallbackModel": {
+      "value": "${DEPLOY_FALLBACK_MODEL=true}"
+    },
+    "deployClaudeModels": {
+      "value": "${DEPLOY_CLAUDE_MODELS=true}"
+    },
+    "deployOpenAiModel": {
+      "value": "${DEPLOY_OPENAI_MODEL=false}"
+    },
+    "openAiDeploymentName": {
+      "value": "${OPENAI_DEPLOYMENT_NAME=gpt-5-mini}"
+    },
+    "openAiModelVersion": {
+      "value": "${OPENAI_MODEL_VERSION=2025-08-07}"
+    },
+    "openAiCapacity": {
+      "value": "${OPENAI_CAPACITY=50}"
+    },
+    "keyVaultPublicNetworkAccess": {
+      "value": "${KEY_VAULT_PUBLIC_NETWORK_ACCESS=Enabled}"
+    }
+  }
+}

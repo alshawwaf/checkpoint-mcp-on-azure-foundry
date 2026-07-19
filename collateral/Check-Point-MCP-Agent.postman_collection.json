@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "Check Point MCP Agent (Azure Foundry)",
+    "description": "Invoke the Check Point security-ops hosted agent. Two ways: (1) the bridge -- a static bearer token any client can send (Teams, n8n, curl, Postman); (2) the Entra-native Responses endpoint for Azure-aware clients. Set the collection variables before running. No secrets are stored in this file -- fill bridgeToken / entraToken yourself (fetch the bridge token from Key Vault: az keyvault secret show --vault-name <kv> --name <prefix>-bridge-token --query value -o tsv).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "bridgeUrl",
+      "value": "https://func-chkpmcp-bridge-REPLACE.azurewebsites.net/api/invoke",
+      "description": "Output of: python3 -m chkpmcpaz bridge show"
+    },
+    {
+      "key": "bridgeToken",
+      "value": "",
+      "description": "The static bearer token from Key Vault secret <prefix>-bridge-token. NEVER commit a real value."
+    },
+    {
+      "key": "responsesUrl",
+      "value": "https://<account>.services.ai.azure.com/api/projects/<project>/agents/chkpmcp-agent/endpoint/protocols/openai/responses",
+      "description": "The hosted agent's Responses endpoint (Azure-aware clients only)."
+    },
+    {
+      "key": "entraToken",
+      "value": "",
+      "description": "An Entra token on the ai.azure.com scope: az account get-access-token --scope https://ai.azure.com/.default --query accessToken -o tsv. NEVER commit a real value."
+    }
+  ],
+  "item": [
+    {
+      "name": "Invoke (bearer via bridge)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{bridgeToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"prompt\": \"how many hosts are configured?\",\n  \"session\": \"postman-demo\"\n}"
+        },
+        "url": { "raw": "{{bridgeUrl}}", "host": ["{{bridgeUrl}}"] },
+        "description": "Static-token front door. Any client can call this with only the bearer token; no Azure login required."
+      }
+    },
+    {
+      "name": "Invoke (Entra token, Responses endpoint)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{entraToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input\": \"how many hosts are configured?\"\n}"
+        },
+        "url": { "raw": "{{responsesUrl}}", "host": ["{{responsesUrl}}"] },
+        "description": "Azure-aware path: an Entra bearer token (ai.azure.com scope) straight at the hosted agent's Responses endpoint. No bridge needed."
+      }
+    }
+  ]
+}

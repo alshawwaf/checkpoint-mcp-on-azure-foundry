@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 600" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="How the Check Point security-ops agent operates on Microsoft Foundry: an optional guardrail (the Check Point AI Guardrail / Lakera, or Azure Prompt Shields) screens the input before any model call, the agent spawns @chkp stdio tool servers and merges their namespaced tools, reasons through a provider seam on Claude or gpt-5-mini, calls tools against the real estate, loops on the results, and returns a grounded answer with token telemetry.">
+  <defs>
+    <linearGradient id="cp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2d95"/>
+      <stop offset="1" stop-color="#a02bce"/>
+    </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8b90a8"/>
+    </marker>
+    <marker id="am" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#e0117f"/>
+    </marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#0ea472"/>
+    </marker>
+    <style>
+      .p{fill:#1c2036} .m{fill:#565d78} .f{fill:#8489a0}
+      .t{font-weight:700} .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+      .node{fill:#ffffff;stroke:#d9ddeb}
+      .edge{stroke:#8b90a8;stroke-width:2;fill:none}
+      .edgeA{stroke:#e0117f;stroke-width:2.5;fill:none}
+      .edgeG{stroke:#0ea472;stroke-width:2.5;fill:none}
+      .num{fill:url(#cp)} .numt{fill:#fff;font-weight:700}
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1258" height="598" rx="18" fill="#ffffff" stroke="#e2e5f1" stroke-width="1.5"/>
+
+  <!-- title -->
+  <rect x="40" y="32" width="6" height="30" rx="3" fill="url(#cp)"/>
+  <text x="58" y="47" class="p t" font-size="21">How the agent operates</text>
+  <text x="58" y="70" class="m mono" font-size="13">python3 -m chkpmcpaz chat "how many hosts are configured?"</text>
+
+  <!-- you -->
+  <rect x="40" y="200" width="156" height="84" rx="10" class="node"/>
+  <text x="58" y="232" class="p t" font-size="14">You</text>
+  <text x="58" y="253" class="m" font-size="12">a plain-English</text>
+  <text x="58" y="270" class="m" font-size="12">question</text>
+
+  <!-- agent (center hero) -->
+  <rect x="250" y="120" width="300" height="232" rx="14" fill="#fdf4fa" stroke="url(#cp)" stroke-width="2.5"/>
+  <path d="M250 154 V134 q0-14 14-14 h272 q14 0 14 14 v20 z" fill="url(#cp)"/>
+  <text x="272" y="141" fill="#fff" class="t" font-size="10.5" letter-spacing="1">MICROSOFT FOUNDRY</text>
+  <text x="272" y="180" class="p t" font-size="16">Security-Ops Agent</text>
+  <text x="272" y="200" class="m" font-size="12.5">a provider tool-use loop</text>
+  <rect x="266" y="212" width="268" height="60" rx="8" class="node"/>
+  <text x="280" y="233" class="p t" font-size="12">Provider seam <tspan class="mono f" font-weight="400" font-size="10">providers.get_provider</tspan></text>
+  <text x="280" y="253" class="f" font-size="10.5">→ Claude or <tspan class="mono">gpt-5-mini</tspan> · reasons + decides</text>
+  <text x="280" y="266" class="f" font-size="9">normalizes the stream into one <tspan class="mono">TurnResult</tspan></text>
+  <text x="272" y="300" class="f" font-size="10.5">grounding: never state a count not in</text>
+  <text x="272" y="316" class="f" font-size="10.5">tool output; discover names first</text>
+
+  <!-- prompt shields (optional) -->
+  <rect x="710" y="112" width="250" height="52" rx="10" class="node" stroke-dasharray="5 3"/>
+  <text x="726" y="133" class="p t" font-size="12.5">AI Guardrail <tspan class="f" font-weight="400" font-size="10">(optional)</tspan></text>
+  <text x="726" y="151" class="f" font-size="9">Prompt Shields (default) or Check Point (Lakera)</text>
+
+  <!-- model on foundry -->
+  <rect x="710" y="176" width="250" height="86" rx="10" class="node"/>
+  <text x="726" y="198" class="p t" font-size="13">Model on Foundry</text>
+  <text x="726" y="220" font-size="11"><tspan class="mono p">Claude</tspan> <tspan class="mono f">/anthropic</tspan> <tspan class="f">· Anthropic Messages</tspan></text>
+  <text x="726" y="240" font-size="11"><tspan class="mono p">gpt-5-mini</tspan> <tspan class="mono f">/openai</tspan> <tspan class="f">· OpenAI Chat</tspan></text>
+  <text x="726" y="256" class="f" font-size="9.5">streams <tspan class="mono">tool_use</tspan> / <tspan class="mono">tool_calls</tspan></text>
+
+  <!-- serverpool -->
+  <rect x="710" y="278" width="250" height="76" rx="10" class="node"/>
+  <text x="726" y="302" class="p t" font-size="12">ServerPool <tspan class="f" font-weight="400" font-size="10.5">· <tspan class="mono">@chkp</tspan> stdio children</tspan></text>
+  <text x="726" y="322" class="f" font-size="10.5">namespaced <tspan class="mono">server___tool</tspan></text>
+  <text x="726" y="340" class="mono f" font-size="10"><tspan class="p">tools/list</tspan> · <tspan class="p">tools/call</tspan></text>
+
+  <!-- estate -->
+  <rect x="1020" y="278" width="200" height="76" rx="10" class="node"/>
+  <text x="1036" y="306" class="p t" font-size="13">Check Point estate</text>
+  <text x="1036" y="328" class="f" font-size="11">real security data</text>
+  <text x="1036" y="344" class="f" font-size="10">Management API / HTTPS</text>
+
+  <!-- 1: you -> agent -->
+  <path d="M196 242 L250 242" class="edge" marker-end="url(#a)"/>
+  <circle cx="223" cy="242" r="12" class="num"/><text x="223" y="246" text-anchor="middle" class="numt" font-size="12">1</text>
+
+  <!-- 2: agent -> shields (optional) -->
+  <path d="M550 146 C 600 140, 660 138, 710 138" class="edge" stroke-dasharray="5 3" marker-end="url(#a)"/>
+  <circle cx="630" cy="140" r="12" class="num"/><text x="630" y="144" text-anchor="middle" class="numt" font-size="12">2</text>
+
+  <!-- 4: agent -> model (reason, pink) -->
+  <path d="M550 219 L710 219" class="edgeA" marker-end="url(#am)"/>
+  <circle cx="630" cy="219" r="12" class="num"/><text x="630" y="223" text-anchor="middle" class="numt" font-size="12">4</text>
+  <text x="630" y="207" text-anchor="middle" class="f" font-size="9.5">reason · pick tool + args</text>
+
+  <!-- 3: agent -> serverpool (spawn/discover, pink) -->
+  <path d="M550 300 L710 300" class="edgeA" marker-end="url(#am)"/>
+  <circle cx="630" cy="300" r="12" class="num"/><text x="630" y="304" text-anchor="middle" class="numt" font-size="12">3</text>
+  <text x="630" y="288" text-anchor="middle" class="f" font-size="9.5">spawn stdio · tools/list</text>
+
+  <!-- serverpool -> estate -->
+  <path d="M960 316 L1020 316" class="edge" marker-end="url(#a)"/>
+
+  <!-- 5: result loop back to agent (green) -->
+  <path d="M710 342 C 640 378, 615 378, 552 350" class="edgeG" marker-end="url(#ag)"/>
+  <circle cx="631" cy="366" r="12" fill="#0ea472"/><text x="631" y="370" text-anchor="middle" class="numt" font-size="12">5</text>
+  <text x="631" y="392" text-anchor="middle" fill="#0ea472" font-size="10.5"><tspan class="t">loops 3–5</tspan>  ·  tool_result → reason again (max 12 turns)</text>
+
+  <!-- 6: grounded answer back to you (green) · label sits ABOVE the curve -->
+  <path d="M290 352 C 235 368, 178 356, 118 288" class="edgeG" marker-end="url(#ag)"/>
+  <circle cx="212" cy="358" r="12" fill="#0ea472"/><text x="212" y="362" text-anchor="middle" class="numt" font-size="12">6</text>
+  <text x="200" y="304" text-anchor="middle" fill="#0ea472" font-size="10.5" class="t">grounded answer</text>
+
+  <!-- ============ legend ============ -->
+  <rect x="40" y="404" width="1180" height="172" rx="12" class="node"/>
+  <g font-size="12.5">
+    <circle cx="70" cy="436" r="11" class="num"/><text x="70" y="440" text-anchor="middle" class="numt" font-size="11">1</text>
+    <text x="92" y="440" class="p">You ask a plain-English question about the estate.</text>
+    <circle cx="70" cy="472" r="11" class="num"/><text x="70" y="476" text-anchor="middle" class="numt" font-size="11">2</text>
+    <text x="92" y="476" class="p">Optional guardrail screens the input before any model call (Prompt Shields default, or <tspan class="mono" font-size="11">Lakera</tspan>).</text>
+    <circle cx="70" cy="508" r="11" class="num"/><text x="70" y="512" text-anchor="middle" class="numt" font-size="11">3</text>
+    <text x="92" y="512" class="p">The agent spawns <tspan class="mono" font-size="11">@chkp</tspan> stdio children and merges their <tspan class="mono" font-size="11">tools/list</tspan> as <tspan class="mono" font-size="11">server___tool</tspan>.</text>
+    <circle cx="648" cy="436" r="11" class="num"/><text x="648" y="440" text-anchor="middle" class="numt" font-size="11">4</text>
+    <text x="670" y="440" class="p">The provider formats tools; Claude or <tspan class="mono" font-size="11">gpt-5-mini</tspan> picks a tool + args, streaming.</text>
+    <circle cx="648" cy="472" r="11" fill="#0ea472"/><text x="648" y="476" text-anchor="middle" class="numt" font-size="11">5</text>
+    <text x="670" y="476" class="p">ServerPool calls the tool; the truncated result (<tspan class="mono" font-size="11">is_error</tspan>) feeds back and the loop repeats.</text>
+    <circle cx="648" cy="508" r="11" fill="#0ea472"/><text x="648" y="512" text-anchor="middle" class="numt" font-size="11">6</text>
+    <text x="670" y="512" class="p">You get an answer grounded in real tool output — not a guess.</text>
+  </g>
+  <text x="92" y="544" class="mono f" font-size="11.5"><tspan class="p">tokens</tspan>  12,345 in · 890 out · 11,200 cache-read · 91% of input from cache</text>
+  <text x="92" y="564" class="f" font-size="11.5">The same loop runs in your terminal (<tspan class="mono" font-size="10.5">--runtime local</tspan>) or on a Foundry Hosted Agent (<tspan class="mono" font-size="10.5">--runtime hosted</tspan>, <tspan class="mono" font-size="10.5">chkpmcp-agent</tspan>); with <tspan class="mono" font-size="10.5">--session</tspan>, the hosted runtime keeps platform-managed conversation history.</text>
+</svg>

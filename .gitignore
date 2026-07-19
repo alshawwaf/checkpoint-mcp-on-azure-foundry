@@ -1,0 +1,39 @@
+# Internal SE-enablement collateral -- NEVER commit to the public repo
+# (the SharePoint page markdown is internal / [Confidential]; keep it local)
+collateral/sharepoint-se-page.md
+
+# Secrets / credentials -- NEVER commit (Check Point org policy)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+chkp-credentials*
+!chkp-credentials.env.example
+
+# Azure Developer CLI local state (contains env values, principal ids)
+.azure/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node (npx caches from local stdio MCP runs / probe script)
+node_modules/
+
+# Local logs (full command transcripts may reference resource names)
+logs/
+*.log
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/

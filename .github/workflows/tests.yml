@@ -1,0 +1,35 @@
+name: tests
+
+# Run the pure-logic unit suite on every push/PR to main. The tests never call
+# Azure (see tests/ -- no live clients, no credentials, no subprocesses), so
+# they run anywhere. Only the [dev] extra is installed: the mcp and hosting
+# extras are lazy imports and the suite must stay green without them.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The suite uses BaseExceptionGroup (a 3.11+ builtin), so 3.11 is the
+        # floor -- same matrix as the AWS reference repo's CI.
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (package + pytest only -- no mcp/hosting extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[dev]"
+      - name: Lint (stdlib syntax check, no extra dependencies)
+        run: python -m compileall -q chkpmcpaz tests
+      - name: Run tests
+        run: python -m pytest tests/ -q

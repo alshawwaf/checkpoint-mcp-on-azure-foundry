@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: checkpoint-mcp-on-azure-foundry
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+# No `services:` block by design -- the hosted agent is a DATA-PLANE resource,
+# created by the CLI via azure-ai-projects (python3 -m chkpmcpaz deploy). The
+# azd `microsoft.foundry` provider cannot express `format: Anthropic` model
+# deployments, so the Claude deployments live in infra/ Bicep instead, the
+# agent image is built with `az acr build --file agent/Dockerfile .` (repo-root
+# context), and chkpmcpaz registers the agent version + routes traffic + grants
+# the per-agent identity its RBAC post-create (the identity does not exist at
+# provision time). See CONTRACT.md section 4.1.

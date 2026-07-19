@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chkpmcpaz"
+version = "0.1.0"
+description = "Check Point MCP servers + Claude agent on Microsoft Foundry (Azure) -- deploy/chat/status/doctor/destroy CLI"
+readme = "README.md"
+# Floor is 3.11: the code and tests use BaseExceptionGroup (mirrors the AWS repo's CI floor).
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.69",             # AnthropicFoundry client (Claude on Foundry, GA 2026-06)
+    "openai>=1.32",                # AzureOpenAI client (gpt-5-mini test provider; Apache-2.0).
+                                   # 1.32.0 is the floor that added parallel_tool_calls to
+                                   # chat.completions.create() (providers.py passes it).
+    "azure-identity>=1.19",        # DefaultAzureCredential / bearer token providers
+    "azure-keyvault-secrets>=4.8", # per-server credential secrets
+    "requests>=2.32",              # Content Safety shieldPrompt REST (no SDK method for it)
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]                       # stdio ClientSession for the @chkp servers
+hosting = ["azure-ai-projects>=2.1.0"]   # hosted-agent version create/invoke (CLI deploy path)
+dev = ["pytest>=7", "pyflakes>=3"]  # pyflakes: static undefined-name guard (MIT)
+
+[project.scripts]
+chkpmcpaz = "chkpmcpaz.cli:main"
+
+[tool.setuptools]
+packages = ["chkpmcpaz"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
